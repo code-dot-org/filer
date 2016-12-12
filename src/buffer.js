@@ -2,7 +2,10 @@ function FilerBuffer (subject, encoding, nonZero) {
 
   // Automatically turn ArrayBuffer into Uint8Array so that underlying
   // Buffer code doesn't just throw away and ignore ArrayBuffer data.
-  if (subject instanceof ArrayBuffer) {
+
+  // Check for subject.byteLength because Safari IDB ArrayBuffer's don't always
+  // return true with "instanceof ArrayBuffer"
+  if (subject instanceof ArrayBuffer || typeof subject.byteLength !== 'undefined') {
     subject = new Uint8Array(subject);
   }
 
