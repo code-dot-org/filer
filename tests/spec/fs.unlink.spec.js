@@ -1,19 +1,18 @@
-var Filer = require('../..');
-var util = require('../lib/test-utils.js');
-var expect = require('chai').expect;
+let util = require('../lib/test-utils.js');
+let expect = require('chai').expect;
 
 describe('fs.unlink', function() {
   beforeEach(util.setup);
   afterEach(util.cleanup);
 
   it('should be a function', function() {
-    var fs = util.fs();
+    const fs = util.fs();
     expect(fs.unlink).to.be.a('function');
   });
 
   it('should remove a link to an existing file', function(done) {
-    var fs = util.fs();
-    var complete1, complete2;
+    let fs = util.fs();
+    let complete1, complete2;
 
     function maybeDone() {
       if(complete1 && complete2) {
@@ -35,6 +34,7 @@ describe('fs.unlink', function() {
 
             fs.stat('/myfile', function(error, result) {
               expect(error).to.exist;
+              expect(result).not.to.exist;
               complete1 = true;
               maybeDone();
             });
@@ -53,7 +53,7 @@ describe('fs.unlink', function() {
   });
 
   it('should not follow symbolic links', function(done) {
-    var fs = util.fs();
+    let fs = util.fs();
 
     fs.symlink('/', '/myFileLink', function (error) {
       if (error) throw error;
@@ -66,6 +66,7 @@ describe('fs.unlink', function() {
 
           fs.lstat('/myFileLink', function (error, result) {
             expect(error).to.exist;
+            expect(result).not.to.exist;
 
             fs.lstat('/myotherfile', function (error, result) {
               if (error) throw error;
@@ -84,7 +85,7 @@ describe('fs.unlink', function() {
   });
 
   it('should not unlink directories', function (done) {
-    var fs = util.fs();
+    let fs = util.fs();
 
     fs.mkdir('/mydir', function (error) {
       if(error) throw error;
@@ -96,10 +97,46 @@ describe('fs.unlink', function() {
         fs.stat('/mydir', function (error, stats) {
           expect(error).not.to.exist;
           expect(stats).to.exist;
-          expect(stats.type).to.equal('DIRECTORY');
+          expect(stats.isDirectory()).to.be.true;
           done();
         });
       });
     });
+  });
+});
+
+describe('fs.promises.unlink', function () {
+  beforeEach(util.setup);
+  afterEach(util.cleanup);
+
+  it('should be a function', function () {
+    let fs = util.fs();
+    expect(fs.promises.unlink).to.be.a('function');
+  });
+
+  it('should return an error if trying to delete a file that does not exist', function() {
+    const fsPromises = util.fs().promises;
+
+    return fsPromises.unlink('/myFile')
+      .catch(error => {
+        expect(error).to.exist;
+        expect(error.code).to.equal('ENOENT');
+      });
+  });
+
+  it('should not unlink directories', () => {
+    let fs = util.fs().promises;
+
+    return fs.mkdir('/mydir')
+      .then(() => fs.unlink('/mydir'))
+      .catch(error => {
+        expect(error).to.exist;
+        expect(error.code).to.equal('EPERM');
+      })
+      .then(() => fs.stat('/mydir'))
+      .then(stats => {
+        expect(stats).to.exist;
+        expect(stats.type).to.equal('DIRECTORY');
+      });
   });
 });

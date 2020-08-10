@@ -1,5 +1,4 @@
-var Filer = require('../..');
-var util = require('../lib/test-utils.js');
+var Filer = require('../../src');
 var expect = require('chai').expect;
 var setImmediate = require('../../lib/async.js').setImmediate;
 
@@ -53,7 +52,7 @@ describe('Queued operations should error when fs is in error state, issue 258', 
 
   it('should get EFILESYSTEMERROR errors on callbacks to queued operations on provider error', function(done) {
     var errCount = 0;
-    var fs = new Filer.FileSystem({provider: provider}, function(err) {
+    var fs = new Filer.FileSystem({provider: provider}, function() {
       // Do nothing
     });
 

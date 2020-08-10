@@ -1,4 +1,3 @@
-var Filer = require('../../..');
 var util = require('../../lib/test-utils.js');
 var expect = require('chai').expect;
 
@@ -17,7 +16,7 @@ describe('FileSystemShell.cat', function() {
 
     shell.cat(null, function(error, data) {
       expect(error).to.exist;
-      expect(error.code).to.equal("EINVAL");
+      expect(error.code).to.equal('EINVAL');
       expect(data).not.to.exist;
       done();
     });
@@ -26,7 +25,7 @@ describe('FileSystemShell.cat', function() {
   it('should return the contents of a single file', function(done) {
     var fs = util.fs();
     var shell = new fs.Shell();
-    var contents = "file contents";
+    var contents = 'file contents';
 
     fs.writeFile('/file', contents, function(err) {
       if(err) throw err;
@@ -42,7 +41,7 @@ describe('FileSystemShell.cat', function() {
   it('should return the contents of multiple files', function(done) {
     var fs = util.fs();
     var shell = new fs.Shell();
-    var contents = "file contents";
+    var contents = 'file contents';
     var contents2 = contents + '\n' + contents;
 
     fs.writeFile('/file', contents, function(err) {
@@ -63,7 +62,7 @@ describe('FileSystemShell.cat', function() {
   it('should fail if any of multiple file paths is invalid', function(done) {
     var fs = util.fs();
     var shell = new fs.Shell();
-    var contents = "file contents";
+    var contents = 'file contents';
     var contents2 = contents + '\n' + contents;
 
     fs.writeFile('/file', contents, function(err) {
@@ -74,7 +73,7 @@ describe('FileSystemShell.cat', function() {
 
         shell.cat(['/file', '/nofile'], function(err, data) {
           expect(err).to.exist;
-          expect(err.code).to.equal("ENOENT");
+          expect(err.code).to.equal('ENOENT');
           expect(data).not.to.exist;
           done();
         });

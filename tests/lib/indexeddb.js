@@ -1,11 +1,8 @@
-var Filer = require("../..");
+'use strict';
 
-var indexedDB = global.indexedDB       ||
-                global.mozIndexedDB    ||
-                global.webkitIndexedDB ||
-                global.msIndexedDB;
+const Filer = require('../../src');
 
-var needsCleanup = [];
+let needsCleanup = [];
 if(global.addEventListener) {
   global.addEventListener('beforeunload', function() {
     needsCleanup.forEach(function(f) { f(); });
@@ -13,8 +10,8 @@ if(global.addEventListener) {
 }
 
 function IndexedDBTestProvider(name) {
-  var _done = false;
-  var that = this;
+  let _done = false;
+  let that = this;
 
   function cleanup(callback) {
     callback = callback || function(){};
@@ -23,20 +20,32 @@ function IndexedDBTestProvider(name) {
       return callback();
     }
 
-    // We have to force any other connections to close
-    // before we can delete a db.
-    if(that.provider.db) {
-      that.provider.db.close();
-    }
-
-    var request = indexedDB.deleteDatabase(name);
     function finished() {
       that.provider = null;
       _done = true;
       callback();
     }
-    request.onsuccess = finished;
-    request.onerror = finished;
+
+    try {
+      // We have to force any other connections to close
+      // before we can delete a db.
+      if(that.provider.db) {
+        that.provider.db.close();
+      }
+
+      const indexedDB = global.indexedDB       ||
+                      global.mozIndexedDB    ||
+                      global.webkitIndexedDB ||
+                      global.msIndexedDB;
+
+      let request = indexedDB.deleteDatabase(name);
+      request.onsuccess = finished;
+      request.onerror = finished;
+    } catch(e) {
+      /* eslint no-console:0 */
+      console.log('Failed to delete test database', e);
+      finished();
+    }
   }
 
   function init() {

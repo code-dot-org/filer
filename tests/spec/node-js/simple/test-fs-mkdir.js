@@ -1,8 +1,7 @@
-var Filer = require('../../../..');
 var util = require('../../../lib/test-utils.js');
 var expect = require('chai').expect;
 
-describe("node.js tests: https://github.com/joyent/node/blob/master/test/simple/test-fs-mkdir.js", function() {
+describe('node.js tests: https://github.com/joyent/node/blob/master/test/simple/test-fs-mkdir.js', function() {
   beforeEach(util.setup);
   afterEach(util.cleanup);
 
@@ -16,7 +15,7 @@ describe("node.js tests: https://github.com/joyent/node/blob/master/test/simple/
       fs.stat(pathname, function(error, result) {
         expect(error).not.to.exist;
         expect(result).to.exist;
-        expect(result.type).to.equal('DIRECTORY');
+        expect(result.isDirectory()).to.be.true;
         done();
       });
     });
@@ -32,7 +31,7 @@ describe("node.js tests: https://github.com/joyent/node/blob/master/test/simple/
       fs.stat(pathname, function(error, result) {
         expect(error).not.to.exist;
         expect(result).to.exist;
-        expect(result.type).to.equal('DIRECTORY');
+        expect(result.isDirectory()).to.be.true;
         done();
       });
     });

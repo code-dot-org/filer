@@ -1,8 +1,8 @@
+var {promisify} = require('es6-promisify');
 var Path = require('../path.js');
 var Errors = require('../errors.js');
 var Environment = require('./environment.js');
 var async = require('../../lib/async.js');
-var Encoding = require('../encoding.js');
 var minimatch = require('minimatch');
 
 function Shell(fs, options) {
@@ -57,6 +57,24 @@ function Shell(fs, options) {
   this.pwd = function() {
     return cwd;
   };
+
+  this.promises = {};
+  /**
+  * Public API for Shell converted to Promise based
+  */
+  [
+    'cd',
+    'exec',
+    'touch',
+    'cat',
+    'ls',
+    'rm',
+    'tempDir',
+    'mkdirp',
+    'find'
+  ].forEach((methodName)=>{
+    this.promises[methodName] = promisify(this[methodName].bind(this));
+  });
 }
 
 /**
@@ -87,7 +105,7 @@ Shell.prototype.exec = function(path, args, callback) {
   callback = callback || function(){};
   path = Path.resolve(sh.pwd(), path);
 
-  fs.readFile(path, "utf8", function(error, data) {
+  fs.readFile(path, 'utf8', function(error, data) {
     if(error) {
       callback(error);
       return;
@@ -131,7 +149,7 @@ Shell.prototype.touch = function(path, options, callback) {
     fs.utimes(path, atime, mtime, callback);
   }
 
-  fs.stat(path, function(error, stats) {
+  fs.stat(path, function(error) {
     if(error) {
       if(options.updateOnly === true) {
         callback();
@@ -233,16 +251,10 @@ Shell.prototype.ls = function(dir, options, callback) {
             callback(error);
             return;
           }
-          var entry = {
-            path: Path.basename(name),
-            links: stats.nlinks,
-            size: stats.size,
-            modified: stats.mtime,
-            type: stats.type
-          };
+          var entry = stats;
 
           if(options.recursive && stats.type === 'DIRECTORY') {
-            list(Path.join(pathname, entry.path), function(error, items) {
+            list(Path.join(pathname, entry.name), function(error, items) {
               if(error) {
                 callback(error);
                 return;
@@ -354,7 +366,7 @@ Shell.prototype.tempDir = function(callback) {
 
   // Try and create it, and it will either work or fail
   // but either way it's now there.
-  fs.mkdir(tmp, function(err) {
+  fs.mkdir(tmp, function() {
     callback(null, tmp);
   });
 };
@@ -375,7 +387,8 @@ Shell.prototype.mkdirp = function(path, callback) {
     callback(new Errors.EINVAL('Missing path argument'));
     return;
   }
-  else if (path === '/') {
+  path = Path.resolve(sh.pwd(), path);
+  if (path === '/') {
     callback();
     return;
   }
@@ -399,7 +412,7 @@ Shell.prototype.mkdirp = function(path, callback) {
         var parent = Path.dirname(path);
         if(parent === '/') {
           fs.mkdir(path, function (err) {
-            if (err && err.code != 'EEXIST') {
+            if (err && err.code !== 'EEXIST') {
               callback(err);
               return;
             }
@@ -411,7 +424,7 @@ Shell.prototype.mkdirp = function(path, callback) {
           _mkdirp(parent, function (err) {
             if (err) return callback(err);
             fs.mkdir(path, function (err) {
-              if (err && err.code != 'EEXIST') {
+              if (err && err.code !== 'EEXIST') {
                 callback(err);
                 return;
               }
@@ -438,7 +451,7 @@ Shell.prototype.mkdirp = function(path, callback) {
  * `find` returns a flat array of absolute paths for all matching/found
  * paths as the final argument to the callback.
  */
- Shell.prototype.find = function(path, options, callback) {
+Shell.prototype.find = function(path, options, callback) {
   var sh = this;
   var fs = sh.fs;
   if(typeof options === 'function') {

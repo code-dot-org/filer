@@ -1,15 +1,17 @@
-var Filer = require('../..');
-var util = require('../lib/test-utils.js');
-var expect = require('chai').expect;
+'use strict';
+
+const Filer = require('../../src');
+const util = require('../lib/test-utils.js');
+const expect = require('chai').expect;
 
 describe('node times (atime, mtime, ctime) with mount flags', function() {
 
-  var dirname = "/dir";
-  var filename = "/dir/file";
+  const dirname = '/dir';
+  const filename = '/dir/file';
 
   function memoryFS(flags, callback) {
-    var name = util.uniqueName();
-    var fs = new Filer.FileSystem({
+    const name = util.uniqueName();
+    return new Filer.FileSystem({
       name: name,
       flags: flags || [],
       provider: new Filer.FileSystem.providers.Memory(name)
@@ -44,7 +46,7 @@ describe('node times (atime, mtime, ctime) with mount flags', function() {
 
   it('should not update ctime when calling fs.rename() with NOCTIME', function(done) {
     memoryFS(['NOCTIME'], function(error, fs) {
-      var newfilename = filename + '1';
+      const newfilename = filename + '1';
 
       createTree(fs, function() {
         stat(fs, filename, function(stats1) {
@@ -53,9 +55,9 @@ describe('node times (atime, mtime, ctime) with mount flags', function() {
             if(error) throw error;
 
             stat(fs, newfilename, function(stats2) {
-              expect(stats2.ctime).to.equal(stats1.ctime);
-              expect(stats2.mtime).to.equal(stats1.mtime);
-              expect(stats2.atime).to.equal(stats1.atime);
+              expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
+              expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
+              expect(stats2.atimeMs).to.equal(stats1.atimeMs);
               done();
             });
           });
@@ -73,9 +75,9 @@ describe('node times (atime, mtime, ctime) with mount flags', function() {
             if(error) throw error;
 
             stat(fs, filename, function(stats2) {
-              expect(stats2.ctime).to.equal(stats1.ctime);
-              expect(stats2.mtime).to.equal(stats1.mtime);
-              expect(stats2.atime).to.equal(stats1.atime);
+              expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
+              expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
+              expect(stats2.atimeMs).to.equal(stats1.atimeMs);
               done();
             });
           });
@@ -93,9 +95,9 @@ describe('node times (atime, mtime, ctime) with mount flags', function() {
             if(error) throw error;
 
             stat(fs, filename, function(stats2) {
-              expect(stats2.ctime).to.be.at.least(stats1.ctime);
-              expect(stats2.mtime).to.equal(stats1.mtime);
-              expect(stats2.atime).to.be.at.least(stats1.atime);
+              expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
+              expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
+              expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
               done();
             });
           });

@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "before:init": ["npm run test"],
+    "before:bump": ["npm run build"]
+  },
+  "git": {
+    "pushRepo": "git@github.com:filerjs/filer.git",
+    "tagName": "v${version}"
+  },
+  "npm": {
+    "publish": true
+  },
+  "github": {
+    "pushRepo": "git@github.com:filerjs/filer.git",
+    "release": true
+  }
+}

@@ -1,6 +1,5 @@
-var Filer = require('../..');
+var Filer = require('../../src');
 var IndexedDBTestProvider = require('./indexeddb.js');
-var WebSQLTestProvider = require('./websql.js');
 var MemoryTestProvider = require('./memory.js');
 var Url = require('url');
 
@@ -16,13 +15,8 @@ function uniqueName() {
 
 function findBestProvider() {
   var providers = Filer.FileSystem.providers;
-  if(providers.IndexedDB.isSupported()) {
-    return IndexedDBTestProvider;
-  }
-  if(providers.WebSQL.isSupported()) {
-    return WebSQLTestProvider;
-  }
-  return MemoryTestProvider;
+  return providers.IndexedDB.isSupported() ?
+    IndexedDBTestProvider : MemoryTestProvider;
 }
 
 function getUrlParams() {
@@ -49,6 +43,22 @@ function getProviderType() {
   return queryString['filer-provider'] || defaultProvider;
 }
 
+// Run fn() in an environment with indexedDB available
+// either as-is, or shimmed, removing when done.
+function shimIndexedDB(fn) {
+  var addShim = !Filer.FileSystem.providers.IndexedDB.isSupported();
+
+  if(addShim) {
+    global.indexedDB = require('fake-indexeddb');
+  }
+
+  fn();
+
+  if(addShim) {
+    delete global.indexedDB;
+  }
+}
+
 function setup(callback) {
   // In browser we support specifying the provider via the query string
   // (e.g., ?filer-provider=IndexedDB). If not specified, we use
@@ -58,20 +68,17 @@ function setup(callback) {
   var name = uniqueName();
 
   switch(providerType.toLowerCase()) {
-    case 'indexeddb':
-      _provider = new IndexedDBTestProvider(name);
-      break;
-    case 'websql':
-      _provider = new WebSQLTestProvider(name);
-      break;
-    case 'memory':
-      _provider = new MemoryTestProvider(name);
-      break;
-    case 'default':
-    default:
-      var BestProvider = findBestProvider();
-      _provider = new BestProvider(name);
-      break;
+  case 'indexeddb':
+    _provider = new IndexedDBTestProvider(name);
+    break;
+  case 'memory':
+    _provider = new MemoryTestProvider(name);
+    break;
+  case 'default':
+  default:
+    var BestProvider = findBestProvider();
+    _provider = new BestProvider(name);
+    break;
   }
 
   // Allow passing FS flags on query string
@@ -95,14 +102,14 @@ function setup(callback) {
 
 function fs() {
   if(!_fs) {
-    throw "TestUtil: call setup() before fs()";
+    throw new Error('TestUtil: call setup() before fs()');
   }
   return _fs;
 }
 
 function provider() {
   if(!_provider) {
-    throw "TestUtil: call setup() before provider()";
+    throw new Error('TestUtil: call setup() before provider()');
   }
   return _provider;
 }
@@ -140,6 +147,16 @@ function typedArrayEqual(a, b) {
   return true;
 }
 
+/**
+ * Parse JSON with serialized Buffers
+ */
+const parseBJSON = json =>
+  JSON.parse(json, (key, value) =>
+    value && value.type === 'Buffer' ?
+      Buffer.from(value.data) :
+      value
+  );
+
 module.exports = {
   uniqueName: uniqueName,
   setup: setup,
@@ -148,9 +165,10 @@ module.exports = {
   provider: provider,
   providers: {
     IndexedDB: IndexedDBTestProvider,
-    WebSQL: WebSQLTestProvider,
     Memory: MemoryTestProvider
   },
   cleanup: cleanup,
-  typedArrayEqual: typedArrayEqual
+  typedArrayEqual: typedArrayEqual,
+  parseBJSON,
+  shimIndexedDB
 };

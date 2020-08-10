@@ -1,11 +1,10 @@
-var Filer = require('../../..');
 var util = require('../../lib/test-utils.js');
 var expect = require('chai').expect;
 
 function getTimes(fs, path, callback) {
   fs.stat(path, function(error, stats) {
     if(error) throw error;
-    callback({mtime: stats.mtime, atime: stats.atime});
+    callback({mtime: stats.mtimeMs, atime: stats.atimeMs});
   });
 }
 
@@ -27,7 +26,7 @@ describe('FileSystemShell.touch', function() {
 
       fs.stat('/newfile', function(error, stats) {
         expect(error).not.to.exist;
-        expect(stats.type).to.equal('FILE');
+        expect(stats.isFile()).to.be.true;
         done();
       });
     });
@@ -42,6 +41,7 @@ describe('FileSystemShell.touch', function() {
 
       fs.stat('/newfile', function(error, stats) {
         expect(error).to.exist;
+        expect(stats).not.to.exist;
         done();
       });
     });
