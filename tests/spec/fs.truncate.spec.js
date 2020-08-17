@@ -1,3 +1,4 @@
+var Filer = require('../..');
 var util = require('../lib/test-utils.js');
 var expect = require('chai').expect;
 
@@ -10,31 +11,16 @@ describe('fs.truncate', function() {
     expect(fs.truncate).to.be.a('function');
   });
 
-  it('should error when length is not an integer', function(done) {
-    var fs = util.fs();
-    var contents = 'This is a file.';
-
-    fs.writeFile('/myfile', contents, function(error) {
-      if(error) throw error;
-
-      fs.truncate('/myfile', 'notAnInteger', function(error) {
-        expect(error).to.exist;
-        expect(error.code).to.equal('EINVAL');
-        done();
-      });
-    });
-  });
-
   it('should error when length is negative', function(done) {
     var fs = util.fs();
-    var contents = 'This is a file.';
+    var contents = "This is a file.";
 
     fs.writeFile('/myfile', contents, function(error) {
       if(error) throw error;
 
       fs.truncate('/myfile', -1, function(error) {
         expect(error).to.exist;
-        expect(error.code).to.equal('EINVAL');
+        expect(error.code).to.equal("EINVAL");
         done();
       });
     });
@@ -45,15 +31,15 @@ describe('fs.truncate', function() {
 
     fs.truncate('/', 0, function(error) {
       expect(error).to.exist;
-      expect(error.code).to.equal('EISDIR');
+      expect(error.code).to.equal("EISDIR");
       done();
     });
   });
 
   it('should truncate a file', function(done) {
     var fs = util.fs();
-    var buffer = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
-    var truncated = Buffer.from([1]);
+    var buffer = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+    var truncated = new Buffer([1]);
 
     fs.open('/myfile', 'w', function(error, result) {
       if(error) throw error;
@@ -61,7 +47,6 @@ describe('fs.truncate', function() {
       var fd = result;
       fs.write(fd, buffer, 0, buffer.length, 0, function(error, result) {
         if(error) throw error;
-        expect(result).to.equal(buffer.length);
 
         fs.close(fd, function(error) {
           if(error) throw error;
@@ -83,8 +68,8 @@ describe('fs.truncate', function() {
 
   it('should pad a file with zeros when the length is greater than the file size', function(done) {
     var fs = util.fs();
-    var buffer = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
-    var truncated = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8, 0]);
+    var buffer = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
+    var truncated = new Buffer([1, 2, 3, 4, 5, 6, 7, 8, 0]);
 
     fs.open('/myfile', 'w', function(error, result) {
       if(error) throw error;
@@ -92,7 +77,6 @@ describe('fs.truncate', function() {
       var fd = result;
       fs.write(fd, buffer, 0, buffer.length, 0, function(error, result) {
         if(error) throw error;
-        expect(result).to.equal(buffer.length);
 
         fs.close(fd, function(error) {
           if(error) throw error;
@@ -114,7 +98,7 @@ describe('fs.truncate', function() {
 
   it('should update the file size', function(done) {
     var fs = util.fs();
-    var buffer = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    var buffer = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 
     fs.open('/myfile', 'w', function(error, result) {
       if(error) throw error;
@@ -122,7 +106,6 @@ describe('fs.truncate', function() {
       var fd = result;
       fs.write(fd, buffer, 0, buffer.length, 0, function(error, result) {
         if(error) throw error;
-        expect(result).to.equal(buffer.length);
 
         fs.close(fd, function(error) {
           if(error) throw error;
@@ -142,9 +125,9 @@ describe('fs.truncate', function() {
     });
   });
 
-  it('should assume a length of 0 if passed undefined', function(done) {
+  it('should truncate a valid descriptor', function(done) {
     var fs = util.fs();
-    var buffer = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    var buffer = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 
     fs.open('/myfile', 'w', function(error, result) {
       if(error) throw error;
@@ -152,21 +135,15 @@ describe('fs.truncate', function() {
       var fd = result;
       fs.write(fd, buffer, 0, buffer.length, 0, function(error, result) {
         if(error) throw error;
-        expect(result).to.equal(buffer.length);
 
-        fs.close(fd, function(error) {
-          if(error) throw error;
+        fs.ftruncate(fd, 0, function(error) {
+          expect(error).not.to.exist;
 
-          // We want to use undefined to see that it defaults to 0
-          fs.truncate('/myfile', undefined, function(error) {
-            expect(error).not.to.exist;
+          fs.fstat(fd, function(error, result) {
+            if(error) throw error;
 
-            fs.stat('/myfile', function(error, result) {
-              if(error) throw error;
-
-              expect(result.size).to.equal(0);
-              done();
-            });
+            expect(result.size).to.equal(0);
+            done();
           });
         });
       });
@@ -175,7 +152,7 @@ describe('fs.truncate', function() {
 
   it('should follow symbolic links', function(done) {
     var fs = util.fs();
-    var buffer = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    var buffer = new Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 
     fs.open('/myfile', 'w', function(error, result) {
       if(error) throw error;
@@ -183,7 +160,6 @@ describe('fs.truncate', function() {
       var fd = result;
       fs.write(fd, buffer, 0, buffer.length, 0, function(error, result) {
         if(error) throw error;
-        expect(result).to.equal(buffer.length);
 
         fs.close(fd, function(error) {
           if(error) throw error;
@@ -210,32 +186,5 @@ describe('fs.truncate', function() {
         });
       });
     });
-  });
-});
-
-describe('fsPromises.truncate', function () {
-  beforeEach(util.setup);
-  afterEach(util.cleanup);
-
-  it('should error when path does not exist (with promises)', () => {
-    var fsPromises = util.fs().promises;
-
-    return fsPromises.truncate('/NonExistingPath', 0)
-      .catch(error => {
-        expect(error).to.exist;
-        expect(error.code).to.equal('ENOENT');
-      });
-  });
-
-  it('should error when length is negative', () => {
-    var fsPromises = util.fs().promises;
-    var contents = 'This is a file.';
-
-    return fsPromises.writeFile('/myfile', contents)
-      .then(() => fsPromises.truncate('/myfile', -1))
-      .catch(error => {
-        expect(error).to.exist;
-        expect(error.code).to.equal('EINVAL');
-      });
   });
 });

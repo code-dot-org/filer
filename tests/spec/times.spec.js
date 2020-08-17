@@ -1,16 +1,16 @@
-'use strict';
-const util = require('../lib/test-utils.js');
-const expect = require('chai').expect;
+var Filer = require('../..');
+var util = require('../lib/test-utils.js');
+var expect = require('chai').expect;
 
-describe('node times (atime, mtime, ctimeMs)', function() {
+describe('node times (atime, mtime, ctime)', function() {
   beforeEach(util.setup);
   afterEach(util.cleanup);
 
-  const dirname = '/dir';
-  const filename = '/dir/file';
+  var dirname = "/dir";
+  var filename = "/dir/file";
 
   function createTree(callback) {
-    const fs = util.fs();
+    var fs = util.fs();
     fs.mkdir(dirname, function(error) {
       if(error) throw error;
 
@@ -23,7 +23,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   }
 
   function stat(path, callback) {
-    const fs = util.fs();
+    var fs = util.fs();
     fs.stat(path, function(error, stats) {
       if(error) throw error;
 
@@ -32,8 +32,8 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   }
 
   it('should update ctime when calling fs.rename()', function(done) {
-    const fs = util.fs();
-    const newfilename = filename + '1';
+    var fs = util.fs();
+    var newfilename = filename + '1';
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -42,9 +42,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(newfilename, function(stats2) {
-            expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+            expect(stats2.ctime).to.be.at.least(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.be.at.least(stats1.atime);
             done();
           });
         });
@@ -53,7 +53,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, mtime, atime when calling fs.truncate()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -62,9 +62,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(filename, function(stats2) {
-            expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.be.at.least(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+            expect(stats2.ctime).to.be.at.least(stats1.ctime);
+            expect(stats2.mtime).to.be.at.least(stats1.mtime);
+            expect(stats2.atime).to.be.at.least(stats1.atime);
             done();
           });
         });
@@ -73,7 +73,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, mtime, atime when calling fs.ftruncate()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -85,9 +85,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
             if(error) throw error;
 
             stat(filename, function(stats2) {
-              expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-              expect(stats2.mtimeMs).to.be.at.least(stats1.mtimeMs);
-              expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+              expect(stats2.ctime).to.be.at.least(stats1.ctime);
+              expect(stats2.mtime).to.be.at.least(stats1.mtime);
+              expect(stats2.atime).to.be.at.least(stats1.atime);
 
               fs.close(fd, done);
             });
@@ -98,7 +98,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.stat()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -106,9 +106,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
         fs.stat(filename, function(error, stats2) {
           if(error) throw error;
 
-          expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-          expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-          expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+          expect(stats2.ctime).to.equal(stats1.ctime);
+          expect(stats2.mtime).to.equal(stats1.mtime);
+          expect(stats2.atime).to.equal(stats1.atime);
           done();
         });
       });
@@ -116,7 +116,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.fstat()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -127,9 +127,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           fs.fstat(fd, function(error, stats2) {
             if(error) throw error;
 
-            expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+            expect(stats2.ctime).to.equal(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.equal(stats1.atime);
 
             fs.close(fd, done);
           });
@@ -139,7 +139,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.lstat()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       fs.link(filename, '/link', function(error) {
@@ -149,9 +149,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           fs.lstat('/link', function(error, stats2) {
             if(error) throw error;
 
-            expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+            expect(stats2.ctime).to.equal(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.equal(stats1.atime);
             done();
           });
         });
@@ -160,7 +160,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.exists()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -171,9 +171,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           fs.stat(filename, function(error, stats2) {
             if(error) throw error;
 
-            expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+            expect(stats2.ctime).to.equal(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.equal(stats1.atime);
             done();
           });
         });
@@ -182,7 +182,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, atime when calling fs.link()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -190,9 +190,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(filename, function(stats2) {
-            expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+            expect(stats2.ctime).to.be.at.least(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.be.at.least(stats1.atime);
             done();
           });
         });
@@ -201,7 +201,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.symlink()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -209,9 +209,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(filename, function(stats2) {
-            expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+            expect(stats2.ctime).to.equal(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.equal(stats1.atime);
             done();
           });
         });
@@ -220,7 +220,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.readlink()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       fs.symlink(filename, '/link', function(error) {
@@ -232,9 +232,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
             expect(contents).to.equal(filename);
 
             stat('/link', function(stats2) {
-              expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-              expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-              expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+              expect(stats2.ctime).to.equal(stats1.ctime);
+              expect(stats2.mtime).to.equal(stats1.mtime);
+              expect(stats2.atime).to.equal(stats1.atime);
               done();
             });
           });
@@ -244,7 +244,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, atime, mtime of parent dir when calling fs.unlink()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(dirname, function(stats1) {
@@ -252,9 +252,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(dirname, function(stats2) {
-            expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.be.at.least(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+            expect(stats2.ctime).to.be.at.least(stats1.ctime);
+            expect(stats2.mtime).to.be.at.least(stats1.mtime);
+            expect(stats2.atime).to.be.at.least(stats1.atime);
             done();
           });
         });
@@ -263,7 +263,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, atime, mtime of parent dir when calling fs.rmdir()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat('/', function(stats1) {
@@ -275,9 +275,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
             if(error) throw error;
 
             stat('/', function(stats2) {
-              expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-              expect(stats2.mtimeMs).to.be.at.least(stats1.mtimeMs);
-              expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+              expect(stats2.ctime).to.be.at.least(stats1.ctime);
+              expect(stats2.mtime).to.be.at.least(stats1.mtime);
+              expect(stats2.atime).to.be.at.least(stats1.atime);
               done();
             });
           });
@@ -287,7 +287,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, atime, mtime of parent dir when calling fs.mkdir()', function(done) {
-    const fs = util.fs();
+      var fs = util.fs();
 
     createTree(function() {
       stat('/', function(stats1) {
@@ -296,9 +296,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat('/', function(stats2) {
-            expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.be.at.least(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+            expect(stats2.ctime).to.be.at.least(stats1.ctime);
+            expect(stats2.mtime).to.be.at.least(stats1.mtime);
+            expect(stats2.atime).to.be.at.least(stats1.atime);
             done();
           });
         });
@@ -307,7 +307,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.close()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       fs.open(filename, 'w', function(error, fd) {
@@ -318,9 +318,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
             if(error) throw error;
 
             stat(filename, function(stats2) {
-              expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-              expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-              expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+              expect(stats2.ctime).to.equal(stats1.ctime);
+              expect(stats2.mtime).to.equal(stats1.mtime);
+              expect(stats2.atime).to.equal(stats1.atime);
               done();
             });
           });
@@ -330,7 +330,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.open()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -338,9 +338,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(filename, function(stats2) {
-            expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+            expect(stats2.ctime).to.equal(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.equal(stats1.atime);
 
             fs.close(fd, done);
           });
@@ -354,8 +354,8 @@ describe('node times (atime, mtime, ctimeMs)', function() {
    */
 
   it('should update atime, ctime, mtime when calling fs.write()', function(done) {
-    const fs = util.fs();
-    const buffer = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    var fs = util.fs();
+    var buffer = new Filer.Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 
     createTree(function() {
       fs.open('/myfile', 'w', function(error, fd) {
@@ -364,15 +364,14 @@ describe('node times (atime, mtime, ctimeMs)', function() {
         stat('/myfile', function(stats1) {
           fs.write(fd, buffer, 0, buffer.length, 0, function(error, nbytes) {
             if(error) throw error;
-            expect(nbytes).to.equal(buffer.length);
 
             fs.close(fd, function(error) {
               if(error) throw error;
 
               stat('/myfile', function(stats2) {
-                expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-                expect(stats2.mtimeMs).to.be.at.least(stats1.mtimeMs);
-                expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+                expect(stats2.ctime).to.be.at.least(stats1.ctime);
+                expect(stats2.mtime).to.be.at.least(stats1.mtime);
+                expect(stats2.atime).to.be.at.least(stats1.atime);
                 done();
               });
             });
@@ -383,8 +382,8 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.read()', function(done) {
-    const fs = util.fs();
-    const buffer = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    var fs = util.fs();
+    var buffer = new Filer.Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 
     createTree(function() {
       fs.open('/myfile', 'w', function(err, fd) {
@@ -392,7 +391,6 @@ describe('node times (atime, mtime, ctimeMs)', function() {
 
         fs.write(fd, buffer, 0, buffer.length, 0, function(err, nbytes) {
           if(err) throw err;
-          expect(nbytes).to.equal(buffer.length);
 
           fs.close(fd, function(error) {
             if(error) throw error;
@@ -401,19 +399,17 @@ describe('node times (atime, mtime, ctimeMs)', function() {
               if(error) throw error;
 
               stat('/myfile', function(stats1) {
-                const buffer2 = Buffer.alloc(buffer.length);
-
+                var buffer2 = new Filer.Buffer(buffer.length);
+                buffer2.fill(0);
                 fs.read(fd, buffer2, 0, buffer2.length, 0, function(err, nbytes) {
-                  if(err) throw err;
-                  expect(nbytes).to.equal(buffer2.length);
 
                   fs.close(fd, function(error) {
                     if(error) throw error;
 
                     stat('/myfile', function(stats2) {
-                      expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-                      expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-                      expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+                      expect(stats2.ctime).to.equal(stats1.ctime);
+                      expect(stats2.mtime).to.equal(stats1.mtime);
+                      expect(stats2.atime).to.equal(stats1.atime);
                       done();
                     });
                   });
@@ -427,18 +423,17 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.readFile()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
         fs.readFile(filename, function(error, data) {
           if(error) throw error;
-          expect(data).to.exist;
 
           stat(filename, function(stats2) {
-            expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+            expect(stats2.ctime).to.equal(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.equal(stats1.atime);
             done();
           });
         });
@@ -447,7 +442,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update atime, ctime, mtime when calling fs.writeFile()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -455,9 +450,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(filename, function(stats2) {
-            expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.be.at.least(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+            expect(stats2.ctime).to.be.at.least(stats1.ctime);
+            expect(stats2.mtime).to.be.at.least(stats1.mtime);
+            expect(stats2.atime).to.be.at.least(stats1.atime);
             done();
           });
         });
@@ -466,7 +461,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update atime, ctime, mtime when calling fs.appendFile()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -474,9 +469,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(filename, function(stats2) {
-            expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.be.at.least(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+            expect(stats2.ctime).to.be.at.least(stats1.ctime);
+            expect(stats2.mtime).to.be.at.least(stats1.mtime);
+            expect(stats2.atime).to.be.at.least(stats1.atime);
             done();
           });
         });
@@ -485,7 +480,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, atime when calling fs.setxattr()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       stat(filename, function(stats1) {
@@ -493,9 +488,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           if(error) throw error;
 
           stat(filename, function(stats2) {
-            expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-            expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-            expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+            expect(stats2.ctime).to.be.at.least(stats1.ctime);
+            expect(stats2.mtime).to.equal(stats1.mtime);
+            expect(stats2.atime).to.be.at.least(stats1.atime);
             done();
           });
         });
@@ -504,7 +499,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, atime when calling fs.fsetxattr()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       fs.open(filename, 'w', function(error, fd) {
@@ -515,10 +510,10 @@ describe('node times (atime, mtime, ctimeMs)', function() {
             if(error) throw error;
 
             stat(filename, function(stats2) {
-              expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-              expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-              expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
-              fs.close(fd, done);
+              expect(stats2.ctime).to.be.at.least(stats1.ctime);
+              expect(stats2.mtime).to.equal(stats1.mtime);
+              expect(stats2.atime).to.be.at.least(stats1.atime);
+              done();
             });
           });
         });
@@ -527,7 +522,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.getxattr()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       fs.setxattr(filename, 'extra', 'data', function(error) {
@@ -536,12 +531,11 @@ describe('node times (atime, mtime, ctimeMs)', function() {
         stat(filename, function(stats1) {
           fs.getxattr(filename, 'extra', function(error, value) {
             if(error) throw error;
-            expect(value).to.equal('data');
 
             stat(filename, function(stats2) {
-              expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-              expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-              expect(stats2.atimeMs).to.equal(stats1.atimeMs);
+              expect(stats2.ctime).to.equal(stats1.ctime);
+              expect(stats2.mtime).to.equal(stats1.mtime);
+              expect(stats2.atime).to.equal(stats1.atime);
               done();
             });
           });
@@ -551,7 +545,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should make no change when calling fs.fgetxattr()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       fs.open(filename, 'w', function(error, fd) {
@@ -563,13 +557,12 @@ describe('node times (atime, mtime, ctimeMs)', function() {
           stat(filename, function(stats1) {
             fs.fgetxattr(fd, 'extra', function(error, value) {
               if(error) throw error;
-              expect(value).to.equal('data');
 
               stat(filename, function(stats2) {
-                expect(stats2.ctimeMs).to.equal(stats1.ctimeMs);
-                expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-                expect(stats2.atimeMs).to.equal(stats1.atimeMs);
-                fs.close(fd, done);
+                expect(stats2.ctime).to.equal(stats1.ctime);
+                expect(stats2.mtime).to.equal(stats1.mtime);
+                expect(stats2.atime).to.equal(stats1.atime);
+                done();
               });
             });
           });
@@ -579,7 +572,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, atime when calling fs.removexattr()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       fs.setxattr(filename, 'extra', 'data', function(error) {
@@ -590,9 +583,9 @@ describe('node times (atime, mtime, ctimeMs)', function() {
             if(error) throw error;
 
             stat(filename, function(stats2) {
-              expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-              expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-              expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
+              expect(stats2.ctime).to.be.at.least(stats1.ctime);
+              expect(stats2.mtime).to.equal(stats1.mtime);
+              expect(stats2.atime).to.be.at.least(stats1.atime);
               done();
             });
           });
@@ -602,7 +595,7 @@ describe('node times (atime, mtime, ctimeMs)', function() {
   });
 
   it('should update ctime, atime when calling fs.fremovexattr()', function(done) {
-    const fs = util.fs();
+    var fs = util.fs();
 
     createTree(function() {
       fs.open(filename, 'w', function(error, fd) {
@@ -616,10 +609,10 @@ describe('node times (atime, mtime, ctimeMs)', function() {
               if(error) throw error;
 
               stat(filename, function(stats2) {
-                expect(stats2.ctimeMs).to.be.at.least(stats1.ctimeMs);
-                expect(stats2.mtimeMs).to.equal(stats1.mtimeMs);
-                expect(stats2.atimeMs).to.be.at.least(stats1.atimeMs);
-                fs.close(fd, done);
+                expect(stats2.ctime).to.be.at.least(stats1.ctime);
+                expect(stats2.mtime).to.equal(stats1.mtime);
+                expect(stats2.atime).to.be.at.least(stats1.atime);
+                done();
               });
             });
           });

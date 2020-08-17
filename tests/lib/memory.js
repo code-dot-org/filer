@@ -1,4 +1,4 @@
-var Filer = require('../../src');
+var Filer = require('../..');
 
 function MemoryTestProvider(name) {
   var that = this;
