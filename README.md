@@ -1,26 +1,26 @@
 [![NPM](https://nodei.co/npm/filer.png?downloads=true&stars=true)](https://nodei.co/npm/filer/)
 
-[![Build Status](https://secure.travis-ci.org/filerjs/filer.png?branch=develop)](http://travis-ci.org/filerjs/filer) [![codecov](https://codecov.io/gh/filerjs/filer/branch/master/graph/badge.svg)](https://codecov.io/gh/filerjs/filer)
+[![Build Status](https://secure.travis-ci.org/filerjs/filer.png?branch=develop)](http://travis-ci.org/filerjs/filer)
 
-### Filer
+###Filer
 
-Filer is a drop-in replacement for node's `fs` module, a POSIX-like file system
-for browsers.
+Filer is a POSIX-like file system interface for node.js and browser-based JavaScript.
 
-### Compatibility
+###Compatibility
 
-Filer uses [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
-and is [known to work in the following browsers/versions](https://caniuse.com/#feat=indexeddb):
+Filer is known to work in the following browsers/versions, with the specified [Storage Providers](#providers):
 
 * node.js: v0.10.*+
-* IE: 10+
-* Edge: 12+
-* Firefox: 10+
-* Chrome: 23+
-* Safari: 10+
-* Opera: 15+
-* iOS: 10+
-* Android Browser: 4.4+
+* IE: 10+ (IndexedDB)
+* Firefox: 26+ (IndexedDB)
+* Chrome: 31+ (IndexedDB, WebSQL)
+* Safari: 7.0+ (WebSQL)
+* Opera: 19+ (IndexedDB, WebSQL)
+* iOS: 3.2+ (WebSQL)
+* Android Browser: 2.1-4.4 (WebSQL), 4.4+ (IndexedDB)
+
+NOTE: if you're interested in maximum compatibility, use the `Fallback` provider instead of `Default`.
+See the section on [Storage Providers](#providers).
 
 ### Contributing
 
@@ -30,15 +30,16 @@ Want to join the fun? We'd love to have you! See [CONTRIBUTING](https://github.c
 
 Filer can be obtained in a number of ways:
 
-1. Via npm: `npm install filer`
-1. Via unpkg: `<script src="https://unpkg.com/filer"></script>` or specify a version directly, for example: [https://unpkg.com/filer@1.0.1/dist/filer.min.js](https://unpkg.com/filer@1.0.1/dist/filer.min.js)
+1. npm - `npm install filer`
+2. bower - `bower install filer`
+3. download pre-built versions: [filer.js](https://raw.github.com/filerjs/filer/develop/dist/filer.js), [filer.min.js](https://raw.github.com/filerjs/filer/develop/dist/filer.min.js)
 
 ### Loading and Usage
 
 Filer is built as a UMD module and can therefore be loaded as a CommonJS or AMD module, or used via the global.
 
 ```javascript
-// Option 1: Filer loaded via require()
+// Option 1: Filer loaded via require() in node/browserify
 var Filer = require('filer');
 
 // Option 2: Filer loaded via RequireJS
@@ -60,6 +61,7 @@ Filer is as close to the node.js [fs module](http://nodejs.org/api/fs.html) as p
 with the following differences:
 
 * No synchronous versions of methods (e.g., `mkdir()` but not `mkdirSync()`).
+* No permissions (e.g., no `chown()`, `chmod()`, etc.).
 * No support for stream-based operations (e.g., `fs.ReadStream`, `fs.WriteStream`).
 
 Filer has other features lacking in node.js (e.g., swappable backend
@@ -76,32 +78,18 @@ they are invoked. Ensure proper ordering by chaining operations in callbacks.
 To create a new file system or open an existing one, create a new `FileSystem`
 instance.  By default, a new [IndexedDB](https://developer.mozilla.org/en/docs/IndexedDB)
 database is created for each file system. The file system can also use other
-backend storage providers, for example `Memory`. See the section on [Storage Providers](#providers).
+backend storage providers, for example [WebSQL](http://en.wikipedia.org/wiki/Web_SQL_Database)
+or even RAM (i.e., for temporary storage). See the section on [Storage Providers](#providers).
 
-<a name="overviewExample"></a>
-
-```js
-const { fs, path } = require('filer');
-
-fs.mkdir('/docs', (err) => {
-  if (err) {
-    return console.error('Unable to create /docs dir', err);
-  }
-  
-  const filename = path.join('/docs', 'first.txt');
-  const data = 'Hello World!\n';
-
-  fs.writeFile(filename, data, (err) => {
-    if (err) {
-      return console.error('Unable to write /docs/first.txt', err);
-    }
-
-    fs.stat(filename, (err, stats) =>  {
-      if (err) {
-        return console.error('Unable to stat /docs/first.txt', err);
-      }
-
-      console.log('Stats for /docs/first.txt:', stats);
+```javascript
+var fs = new Filer.FileSystem();
+fs.open('/myfile', 'w+', function(err, fd) {
+  if (err) throw err;
+  fs.close(fd, function(err) {
+    if (err) throw err;
+    fs.stat('/myfile', function(err, stats) {
+      if (err) throw err;
+      console.log('stats: ' + JSON.stringify(stats));
     });
   });
 });
@@ -110,7 +98,7 @@ fs.mkdir('/docs', (err) => {
 For a complete list of `FileSystem` methods and examples, see the [FileSystem Instance Methods](#FileSystemMethods)
 section below.
 
-Filer also includes node's `path` and `Buffer` modules. See the [Filer.Path](#FilerPath) and [Filer.Buffer](#FilerBuffer) sections below.
+Filer also supports node's Path module. See the [Filer.Path](#FilerPath) section below.
 
 In addition, common shell operations (e.g., rm, touch, cat, etc.) are supported via the
 `FileSystemShell` object, which can be obtained from, and used with a `FileSystem`.
@@ -122,29 +110,11 @@ Like node.js, callbacks for methods that accept them are optional but suggested 
 you omit the callback, errors will be thrown as exceptions). The first callback parameter is
 reserved for passing errors. It will be `null` if no errors occurred and should always be checked.
 
-#### Support for Promises
-
-The Promise based API mimics the way node [implements](https://nodejs.org/api/fs.html#fs_fs_promises_api) them. Both `Shell` and `FileSystem` now have a `promises` property, which gives access to Promise based versions of methods in addition to the regular callback style methods. Method names are identical to their callback counterparts with the difference that instead of receiving a final argument as a callback, they return a Promise that is resolved or rejected based on the success of method execution.
-
-See example below:
-
-```javascript
-const fs = new Filer.FileSystem().promises;
-fs.writeFile('/myfile', 'some data')
-  .then(() => fs.stat('/myfile'))
-  .then(stats => { console.log(`stats: ${JSON.stringify(stats)}`); })
-  .catch(err => { console.error(err); });
-```
-
 #### Filer.FileSystem(options, callback) constructor
 
-In most cases, using `Filer.fs` will be sufficient, and provide a working filesystem.
-However, if you need more control over the filesystem, you can also use the `FileSystem`
-constructor, invoked to open an existing file system or create a new one.
-
-`Filer.FileSystem()` It accepts two arguments: an `options` object, and an optional
-`callback` function. The `options` object can specify a number of optional arguments,
-including:
+File system constructor, invoked to open an existing file system or create a new one.
+Accepts two arguments: an `options` object, and an optional `callback`. The `options`
+object can specify a number of optional arguments, including:
 
 * `name`: the name of the file system, defaults to `'"local'`
 * `flags`: an Array of one or more flags to use when creating/opening the file system:
@@ -177,18 +147,16 @@ NOTE: if the optional callback argument is not passed to the `FileSystem` constr
 operations done on the resulting file system will be queued and run in sequence when
 it becomes ready.
 
-#### Filer.FileSystem.providers - Storage Providers<a name="providers"></a>
+####Filer.FileSystem.providers - Storage Providers<a name="providers"></a>
 
-Filer can be configured to use a number of different storage providers. The provider object encapsulates all aspects of data access, making it possible to swap in different backend storage options.  There are currently 2 providers to choose from:
+Filer can be configured to use a number of different storage providers. The provider object encapsulates all aspects
+of data access, making it possible to swap in different backend storage options.  There are currently 4 different
+providers to choose from:
 
 * `FileSystem.providers.IndexedDB()` - uses IndexedDB
-if necessary
+* `FileSystem.providers.WebSQL()` - uses WebSQL
+* `FileSystem.providers.Fallback()` - attempts to use IndexedDB if possible, falling-back to WebSQL if necessary
 * `FileSystem.providers.Memory()` - uses memory (not suitable for data that needs to survive the current session)
-
-**NOTE**: previous versions of Filer also supported `FileSystem.providers.WebSQL()` and
-`FileSystem.providers.Fallback()`, which could be used in browsers that supported
-WebSQL but not IndexedDB.  [WebSQL has been deprecated](https://www.w3.org/TR/webdatabase/),
-and this functionality was removed in `v1.0.0`.  If for some reason you still need it, use [`v0.0.44`](https://github.com/filerjs/filer/releases/tag/v0.0.44).
 
 You can choose your provider when creating a `FileSystem`:
 
@@ -199,62 +167,45 @@ var providers = FileSystem.providers;
 // Example 1: Use the default provider (currently IndexedDB)
 var fs1 = new FileSystem();
 
-// Example 2: Use the Memory provider
-var fs2 = new FileSystem({ provider: new providers.Memory() });
+// Example 2: Explicitly use IndexedDB
+var fs2 = new FileSystem({ provider: new providers.IndexedDB() });
+
+// Example 3: Use one of IndexedDB or WebSQL, whichever is supported
+var fs3 = new FileSystem({ provider: new providers.Fallback() });
 ```
 
 Every provider has an `isSupported()` method, which returns `true` if the browser supports this provider:
 
 ```javascript
-if( Filer.FileSystem.providers.IndexedDB.isSupported() ) {
-  // IndexedDB provider will work in current environment...
+if( Filer.FileSystem.providers.WebSQL.isSupported() ) {
+  // WebSQL provider will work in current environment...
 }
 ```
 
 You can also write your own provider if you need a different backend. See the code in `src/providers` for details.
 
-#### Filer.Buffer<a name="FilerBuffer"></a>
+A number of other providers have been written, including:
+
+* node.js fs provider: https://github.com/humphd/filer-fs
+* node.js Amazon S3 provider: https://github.com/alicoding/filer-s3
+
+####Filer.Buffer<a name="FilerBuffer"></a>
 
 When reading and writing data, Filer follows node.js and uses [`Buffer`](http://nodejs.org/api/buffer.html).
 When in a node.js environment, native `Buffer`s can be used, or Filer.Buffer, which is a shortcut
 to node's `Buffer`.  In a browser, you can use also use `Filer.Buffer`.
 
 NOTE: a `Filer.Buffer` in a browser is really an augmented `Uint8Array` (i.e., the node `Buffer` api
-methods are added to the instance). See https://github.com/feross/buffer for more details.
+methods are added to the instance). See https://github.com/feross/buffer for more details. Additionally, unlike native `Buffer`, `Filer.Buffer`'s constructor can accept `ArrayBuffer` objects, which will be interpreted as `Uint8Array`s.
 
-NOTE: `Filer.Buffer` currently includes the older, deprecated [constructor functions](https://nodejs.org/api/buffer.html#buffer_new_buffer_array), but these will be removed
-at some point.  You are encouraged to switch to use the newer class methods `Buffer.from()`
-and `Buffer.alloc()`.  See the [node.js Buffer docs](https://nodejs.org/api/buffer.html).
+####Filer.Path<a name="FilerPath"></a>
 
-```js
-/* Deprecated - see https://nodejs.org/api/buffer.html#buffer_new_buffer_array */
-new Buffer(array)
-new Buffer(arrayBuffer[, byteOffset[, length]])
-new Buffer(buffer)
-new Buffer(string[, encoding])
-new Buffer(size)
-
-/* Use Instead */
-Buffer.from(array)
-Buffer.from(arrayBuffer[, byteOffset[, length]])
-Buffer.from(buffer)
-Buffer.from(string[, encoding])
-Buffer.alloc(size)
-Buffer.allocUnsafe(size)
-```
-
-#### Filer.Path<a name="FilerPath"></a>
-
-The node.js [path module](http://nodejs.org/api/path.html) is available via `Filer.path` or
-`Filer.Path` (both are supported for historical reasons, and to match node). The Filer `path`
-module is identical to the node.js version (see [https://github.com/browserify/path-browserify](https://github.com/browserify/path-browserify)), with the following differences:
-
-* The CWD always defaults to `/`
-* No support for Windows style paths (assume you are on a POSIX system)
-* Additional utility methods (see below)
+The node.js [path module](http://nodejs.org/api/path.html) is available via the `Filer.Path` object. It is
+identical to the node.js version with the following differences:
+* No notion of a current working directory in `resolve` (the root dir is used instead)
 
 ```javascript
-var path = Filer.path;
+var path = Filer.Path;
 var dir = path.dirname('/foo/bar/baz/asdf/quux');
 // dir is now '/foo/bar/baz/asdf'
 
@@ -269,38 +220,17 @@ var newpath = path.join('/foo', 'bar', 'baz/asdf', 'quux', '..');
 ```
 
 For more info see the docs in the [path module](http://nodejs.org/api/path.html) for a particular method:
-* `path.normalize(p)` - NOTE: Filer.Path.normalize does *not* add a trailing slash
+* `path.normalize(p)`
 * `path.join([path1], [path2], [...])`
 * `path.resolve([from ...], to)`
 * `path.relative(from, to)`
 * `path.dirname(p)`
-* `path.basename(p, [ext])` - NOTE: Filer.Path.basename will return `'/'` vs. `''`
+* `path.basename(p, [ext])`
 * `path.extname(p)`
 * `path.sep`
 * `path.delimiter`
 
-Filer.Path also includes the following extra methods:
-
-* `isNull(p)` returns `true` or `false` if the path contains a null character (`'\u0000'`)
-* `addTrailing(p)` returns the path `p` with a single trailing slash added
-* `removeTrailing(p)` returns the path `p` with trailing slash(es) removed
-
-[As with node.js](https://nodejs.org/api/fs.html#fs_file_paths), all methods below that
-accept a `path` argument as a `String` can also take a [`file://` URL](https://nodejs.org/api/fs.html#fs_url_object_support)
-or a `Buffer`. For example, all of the following cases will work the same way with Filer:
-
-```js
-// 1. path as a String
-fs.writeFile('/dir/file.txt', 'data', function(err) {...});
-
-// 2. path as a URL
-fs.writeFile(new URL('file:///dir/file.txt'), 'data', function(err) {...});
-
-// 3. path as a Buffer
-fs.writeFile(Buffer.from('/dir/file.txt'), 'data', function(err) {...});
-```
-
-#### Filer.Errors<a name="Errors"></a>
+####Filer.Errors<a name="Errors"></a>
 
 The error objects used internally by Filer are also exposed via the `Filer.Errors` object. As much as possible
 these match their node.js counterparts, with a few Filer-specifc additions.
@@ -336,17 +266,13 @@ function callback(err) {
 console.log(err.message);
 ```
 
-### FileSystem Instance Methods<a name="FileSystemMethods"></a>
+###FileSystem Instance Methods<a name="FileSystemMethods"></a>
 
 Once a `FileSystem` is created, it has the following methods. NOTE: code examples below assume
 a `FileSystem` instance named `fs` has been created like so:
 
 ```javascript
-// 1. Using Filer.fs for a default filesystem
-const { fs } = require('filer');
-
-// 2. Or via the FileSystem constructor with specified options
-const fs = new Filer.FileSystem(options, callback);
+var fs = new Filer.FileSystem();
 ```
 
 * [fs.rename(oldPath, newPath, callback)](#rename)
@@ -364,16 +290,10 @@ const fs = new Filer.FileSystem(options, callback);
 * [fs.mknod(path, mode, callback)](#mknod)
 * [fs.rmdir(path, callback)](#rmdir)
 * [fs.mkdir(path, [mode], callback)](#mkdir)
-* [fs.access(path, [mode], callback)](#access)
-* [fs.mkdtemp(path, [options], callback)](#mkdtemp)
 * [fs.readdir(path, callback)](#readdir)
 * [fs.close(fd, callback)](#close)
 * [fs.open(path, flags, [mode], callback)](#open)
 * [fs.utimes(path, atime, mtime, callback)](#utimes)
-* [fs.chown(path, uid, gid, callback)](#chown)
-* [fs.fchown(fd, uid, gid, callback)](#fchown)
-* [fs.chmod(path, mode, callback)](#chmod)
-* [fs.fchmod(fd, mode, callback)](#fchmod)
 * [fs.futimes(fd, atime, mtime, callback)](#fsutimes)
 * [fs.fsync(fd, callback)](#fsync)
 * [fs.write(fd, buffer, offset, length, position, callback)](#write)
@@ -415,7 +335,7 @@ Example:
 
 ```javascript
 // Create a file, shrink it, expand it.
-var buffer = Filer.Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+var buffer = new Filer.Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 
 fs.open('/myfile', 'w', function(err, fd) {
   if(err) throw error;
@@ -446,7 +366,7 @@ Example:
 
 ```javascript
 // Create a file, shrink it, expand it.
-var buffer = Filer.Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+var buffer = new Filer.Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 
 fs.open('/myfile', 'w', function(err, fd) {
   if(err) throw error;
@@ -477,22 +397,14 @@ Callback gets `(error, stats)`, where `stats` is an object with the following pr
 
 ```
 {
-  node: <string>    // internal node id (unique)
-  dev: <string>     // file system name
-  name: <string>    // the entry's name (basename)
-  size: <number>    // file size in bytes
-  nlinks: <number>  // number of links
-  atime: <date>   // last access time as JS Date Object
-  mtime: <date>   // last modified time as JS Date Object
-  ctime: <date>   // creation time as JS Date Object
-  atimeMs: <number>   // last access time as Unix Timestamp
-  mtimeMs: <number>   // last modified time as Unix Timestamp
-  ctimeMs: <number>   // creation time as Unix Timestamp
-  type: <string>    // file type (FILE, DIRECTORY, SYMLINK),
-  gid: <number>     // group name
-  uid: <number>     // owner name
-  mode: <number>    // permissions
-  version: <number> // version of the node
+  node: <string>   // internal node id (unique)
+  dev: <string>    // file system name
+  size: <number>   // file size in bytes
+  nlinks: <number> // number of links
+  atime: <number>  // last access time
+  mtime: <number>  // last modified time
+  ctime: <number>  // creation time
+  type: <string>   // file type (FILE, DIRECTORY, SYMLINK)
 }
 ```
 
@@ -624,12 +536,10 @@ Create a symbolic link to the file at `dstPath` containing the path `srcPath`. A
 Symbolic links are files that point to other paths.
 
 NOTE: Filer allows for, but ignores the optional `type` parameter used in node.js.
-The `srcPath` may be a relative path, which will be resolved relative to `dstPath`
 
 Example:
 
 ```javascript
-// Absolute path
 fs.symlink('/logs/august.log', '/logs/current', function(err) {
   if(err) throw err;
   fs.readFile('/logs/current', 'utf8', function(err, data) {
@@ -637,21 +547,11 @@ fs.symlink('/logs/august.log', '/logs/current', function(err) {
     var currentLog = data;
   });
 });
-
-// Relative path
-fs.symlink('../file', '/dir/symlink', function(err) {
-  if(err) throw err;
-  // The /dir/symlink file is now a symlink to /file
-});
 ```
 
 #### fs.readlink(path, callback)<a name="readlink"></a>
 
-Reads the contents of a symbolic link. Asynchronous [readlink(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/readlink.html).
-Callback gets `(error, linkContents)`, where `linkContents` is a string
-containing the symbolic link's link path.  If the original `srcPath` given
-to `symlink()` was a relative path, it will be fully resolved relative
-to `dstPath` when returned by `readlink()`.
+Reads the contents of a symbolic link. Asynchronous [readlink(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/readlink.html). Callback gets `(error, linkContents)`, where `linkContents` is a string containing the symbolic link's link path.
 
 Example:
 
@@ -748,46 +648,6 @@ fs.mkdir('/home', function(err) {
 });
 ```
 
-#### fs.access(path, [mode], callback)<a name="access"></a>
-
-Tests a user's permissions for the file or directory supplied in `path` argument. Asynchronous [access(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/access.html). Callback gets no additional arguments. The `mode` argument can be one of the following (constants are available on `fs.constants` and `fs`):
-
-* `F_OK`: Test for existence of file.
-* `R_OK`: Test whether the file exists and grants read permission.
-* `W_OK`: Test whether the file exists and grants write permission.
-* `X_OK`: Test whether the file exists and grants execute permission.
-
-NOTE: you can also create a mask consisting of the bitwise OR of two or more values (e.g. `fs.constants.W_OK | fs.constants.R_OK`).
-
-Example:
-
-```javascript
-// Check if the file exists in the current directory.
-fs.access(file, fs.F_OK, function(err) {
-  console.log(`${file} ${err ? 'does not exist' : 'exists'}`);
-});
-```
-
-#### fs.mkdtemp(prefix, options, callback)<a name="mkdtemp"></a>
-
-Makes a temporary directory with prefix supplied in `path` argument. Method will append six random characters directly to the prefix. Asynchronous. Callback gets `(error, path)`, where path is the path to the created directory.
-
-NOTE: Filer allows for, but ignores the optional `options` argument used in node.js.
-
-Example:
-
-```javascript
-// Create tmp directory with prefix foo
-fs.mkdtemp("/foo-", function (error, path) {
-    // A new folder foo-xxxxxx will be created. Path contains a path to created folder.    
-});
-
-fs.mkdtemp("/myDir/tmp", function (error, path) {
-    // Will create a new folder tmpxxxxxx inside myDir directory. 
-    // Will throw error if myDir does not exist    
-});
-```
-
 #### fs.readdir(path, callback)<a name="readdir"></a>
 
 Reads the contents of a directory. Asynchronous [readdir(3)](http://pubs.opengroup.org/onlinepubs/009695399/functions/readdir.html).
@@ -856,7 +716,7 @@ fs.open('/myfile', 'w', function(err, fd) {
 
 #### fs.utimes(path, atime, mtime, callback)<a name="utimes"></a>
 
-Changes the file timestamps for the file given at path `path`. Asynchronous [utimes(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/utimes.html). Callback gets no additional arguments. Both `atime` (access time) and `mtime` (modified time) arguments should be a JavaScript Date or Number.
+Changes the file timestamps for the file given at path `path`. Asynchronous [utimes(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/utimes.html). Callback gets no additional arguments. Both `atime` (access time) and `mtime` (modified time) arguments should be a JavaScript Date.
 
 Example:
 
@@ -870,7 +730,7 @@ fs.utimes('/myfile.txt', now, now, function(err) {
 
 #### fs.futimes(fd, atime, mtime, callback)<a name="futimes"></a>
 
-Changes the file timestamps for the open file represented by the file descriptor `fd`. Asynchronous [utimes(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/utimes.html). Callback gets no additional arguments. Both `atime` (access time) and `mtime` (modified time) arguments should be a JavaScript Date or Number.
+Changes the file timestamps for the open file represented by the file descriptor `fd`. Asynchronous [utimes(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/utimes.html). Callback gets no additional arguments. Both `atime` (access time) and `mtime` (modified time) arguments should be a JavaScript Date.
 
 Example:
 
@@ -889,107 +749,9 @@ fs.open('/myfile.txt', function(err, fd) {
 });
 ```
 
-#### fs.chown(path, uid, gid, callback)<a name="chown"></a>
-
-Changes the owner and group of a file. Asynchronous [chown(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/chown.html). Callback gets no additional arguments. Both `uid` (user id) and `gid` (group id) arguments should be a JavaScript Number.  By default, `0x0` is used (i.e., `root:root` ownership).
-
-Example:
-
-```javascript
-fs.chown('/myfile.txt', 500, 500, function(err) {
-  if(err) throw err;
-
-  // /myfile.txt is now owned by user with id 500, group 500
-});
-```
-
-#### fs.fchown(fd, uid, gid, callback)<a name="fchown"></a>
-
-Changes the owner and group of a file. Asynchronous [chown(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/chown.html). Callback gets no additional arguments. Both `uid` (user id) and `gid` (group id) arguments should be a JavaScript Number.  By default, `0x0` is used (i.e., `root:root` ownership).
-
-Example:
-
-```javascript
-fs.open('/myfile.txt', function(err, fd) {
-  if(err) throw err;
-
-  fs.fchown(fd, 500, 500, function(err) {
-    if(err) throw err;
-
-    // /myfile.txt is now owned by user with id 500, group 500
-
-    fs.close(fd);
-  });
-});
-```
-
-#### fs.chmod(path, mode, callback)<a name="chmod"></a>
-
-Changes the mode of a file. Asynchronous [chmod(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/chmod.html). Callback gets no additional arguments. The `mode` argument should be a JavaScript Number, which combines file type and permission information.  Here are a list of common values useful for setting the `mode`:
-
-* File type `S_IFREG=0x8000`
-* Dir type `S_IFDIR=0x4000`
-* Link type `S_IFLNK=0xA000`
-
-* Permissions `755=0x1ED`
-* Permissions `644=0x1A4`
-* Permissions `777=0x1FF`
-* Permissions `666=0x1B6`
-
-By default, directories use `(0x4000 | 0x1ED)` and files use `(0x8000 | 0x1A4)`.
-
-Example:
-
-```javascript
-// S_IFREG | 0o777
-var mode = 0x8000 | 0x1FF
-fs.chmod('/myfile.txt', mode, function(err) {
-  if(err) throw err;
-
-  // /myfile.txt is a regular file with permissions 777
-});
-```
-
-#### fs.fchmod(fd, mode, callback)<a name="fchmod"></a>
-
-Changes the mode of a file. Asynchronous [chmod(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/chmod.html). Callback gets no additional arguments. The `mode` argument should be a JavaScript Number, which combines file type and permission information.  By default, `755` (dir) and `644` (file) are used.
-
-Example:
-
-```javascript
-fs.open('/myfile.txt', function(err, fd) {
-  if(err) throw err;
-
-  // S_IFREG | 0o777
-  var mode = 0x8000 | 0x1FF
-  fs.fchmod(fd, mode, function(err) {
-    if(err) throw err;
-
-    // /myfile.txt is a regular file with permissions 777
-
-    fs.close(fd);
-  });
-});
-```
-
 #### fs.fsync(fd, callback)<a name="fsync"></a>
 
-Synchronize the data and metadata for the file referred to by `fd` to disk.
-Asynchronous [fsync(2)](http://man7.org/linux/man-pages/man2/fsync.2.html).
-The callback gets `(error)`.
-
-```js
-fs.open('/myfile', 'r', function(error, fd) {
-  if(err) throw err;
-
-  // Use fd, then sync
-
-  fs.fsync(fd, function(error) {
-    if(err) throw err;
-    fs.close(fd, done);
-  });
-});
-```
+NOTE: Not yet implemented, see https://github.com/filerjs/filer/issues/87
 
 #### fs.write(fd, buffer, offset, length, position, callback)<a name="write"></a>
 
@@ -1001,7 +763,7 @@ Example:
 
 ```javascript
 // Create a file with the following bytes.
-var buffer = Filer.Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+var buffer = new Filer.Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 
 fs.open('/myfile', 'w', function(err, fd) {
   if(err) throw error;
@@ -1038,22 +800,22 @@ Example:
 
 ```javascript
 fs.open('/myfile', 'r', function(err, fd) {
-  if(err) throw err;
+  if(err) throw error;
 
   // Determine size of file
   fs.fstat(fd, function(err, stats) {
-    if(err) throw err;
+    if(err) throw error;
 
     // Create a buffer large enough to hold the file's contents
     var nbytes = expected = stats.size;
-    var buffer = Filer.Buffer.alloc(nbytes);
+    var buffer = new Filer.Buffer(nbytes);
     var read = 0;
 
     function readBytes(offset, position, length) {
       length = length || buffer.length - read;
 
       fs.read(fd, buffer, offset, length, position, function(err, nbytes) {
-        if(err) throw err;
+        if(err) throw error;
 
         // nbytes is now the number of bytes read, between 0 and buffer.length.
         // See if we still have more bytes to read.
@@ -1104,7 +866,7 @@ fs.writeFile('/myfile.txt', "...data...", function (err) {
 });
 
 // Write binary file
-var buffer = Filer.Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+var buffer = new Filer.Buffer([1, 2, 3, 4, 5, 6, 7, 8]);
 fs.writeFile('/myfile', buffer, function (err) {
   if (err) throw err;
 });
@@ -1127,8 +889,8 @@ fs.appendFile('/myfile.txt', "Data...", function (err) {
 // '/myfile.txt' would now read out 'More...Data...'
 
 // Append binary file
-var data = Filer.Buffer.from([1, 2, 3, 4]);
-var more = Filer.Buffer.from([5, 6, 7, 8]);
+var data = new Filer.Buffer([1, 2, 3, 4]);
+var more = new Filer.Buffer([5, 6, 7, 8]);
 
 fs.writeFile('/myfile', data, function (err) {
   if (err) throw err;
@@ -1501,8 +1263,17 @@ sh.find('/app/user', {
 #### sh.ls(dir, [options], callback)<a name="ls"></a>
 
 Get the listing of a directory, returning an array of directory entries
-in the same form as [fs.stat()](#stat), with the exception that a new Array named
-`contents` is added for directory entries, containing child entries.
+in the following form:
+```
+{
+  path: <String> the basename of the directory entry
+  links: <Number> the number of links to the entry
+  size: <Number> the size in bytes of the entry
+  modified: <Number> the last modified date/time
+  type: <String> the type of the entry
+  contents: <Array> an optional array of child entries, if this entry is itself a directory
+}
+```
 
 By default `sh.ls()` gives a shallow listing. If you want to follow
 directories as they are encountered, use the `recursive=true` option. NOTE:

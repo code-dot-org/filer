@@ -1,3 +1,4 @@
+var Filer = require('..');
 var util = require('../tests/lib/test-utils.js');
 
 function setImmediate(cb) {

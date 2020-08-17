@@ -1,43 +1,26 @@
-'use strict';
+var Constants = require('./constants.js');
 
-const Constants = require('./constants.js');
-const Path = require('./path.js');
-
-function dateFromMs(ms) {
-  return new Date(Number(ms));
-}
-
-function Stats(path, fileNode, devName) {
-  this.dev = devName;
+function Stats(fileNode, devName) {
   this.node = fileNode.id;
-  this.type = fileNode.type;
+  this.dev = devName;
   this.size = fileNode.size;
   this.nlinks = fileNode.nlinks;
-  // Date objects
-  this.atime = dateFromMs(fileNode.atime);
-  this.mtime = dateFromMs(fileNode.mtime);
-  this.ctime = dateFromMs(fileNode.ctime);
-  // Unix timestamp MS Numbers
-  this.atimeMs = fileNode.atime;
-  this.mtimeMs = fileNode.mtime;
-  this.ctimeMs = fileNode.ctime;
-  this.version = fileNode.version;
-  this.mode = fileNode.mode;
-  this.uid = fileNode.uid;
-  this.gid = fileNode.gid;
-  this.name = Path.basename(path);
+  this.atime = fileNode.atime;
+  this.mtime = fileNode.mtime;
+  this.ctime = fileNode.ctime;
+  this.type = fileNode.mode;
 }
 
 Stats.prototype.isFile = function() {
-  return this.type === Constants.NODE_TYPE_FILE;
+  return this.type === Constants.MODE_FILE;
 };
 
 Stats.prototype.isDirectory = function() {
-  return this.type === Constants.NODE_TYPE_DIRECTORY;
+  return this.type === Constants.MODE_DIRECTORY;
 };
 
 Stats.prototype.isSymbolicLink = function() {
-  return this.type === Constants.NODE_TYPE_SYMBOLIC_LINK;
+  return this.type === Constants.MODE_SYMBOLIC_LINK;
 };
 
 // These will always be false in Filer.

@@ -1,5 +1,4 @@
-'use strict'; 
-const defaults = require('../constants.js').ENVIRONMENT;
+var defaults = require('../constants.js').ENVIRONMENT;
 
 module.exports = function Environment(env) {
   env = env || {};

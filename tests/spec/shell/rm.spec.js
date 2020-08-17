@@ -1,3 +1,4 @@
+var Filer = require('../../..');
 var util = require('../../lib/test-utils.js');
 var expect = require('chai').expect;
 
@@ -16,7 +17,7 @@ describe('FileSystemShell.rm', function() {
 
     shell.rm(null, function(error, list) {
       expect(error).to.exist;
-      expect(error.code).to.equal('EINVAL');
+      expect(error.code).to.equal("EINVAL");
       expect(list).not.to.exist;
       done();
     });
@@ -25,7 +26,7 @@ describe('FileSystemShell.rm', function() {
   it('should remove a single file', function(done) {
     var fs = util.fs();
     var shell = new fs.Shell();
-    var contents = 'a';
+    var contents = "a";
 
     fs.writeFile('/file', contents, function(err) {
       if(err) throw err;
@@ -106,7 +107,7 @@ describe('FileSystemShell.rm', function() {
   it('should work on a complex dir structure', function(done) {
     var fs = util.fs();
     var shell = new fs.Shell();
-    var contents = 'a';
+    var contents = "a";
 
     fs.mkdir('/dir', function(err) {
       if(err) throw err;

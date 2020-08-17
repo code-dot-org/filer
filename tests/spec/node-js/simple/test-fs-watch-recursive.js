@@ -1,3 +1,4 @@
+var Filer = require('../../../..');
 var util = require('../../../lib/test-utils.js');
 var expect = require('chai').expect;
 
@@ -6,7 +7,7 @@ var expect = require('chai').expect;
  * fd vs. path) for events, or gives only a portion thereof (e.g., basname),
  * we give full, abs paths always.
  */
-describe('node.js tests: https://github.com/joyent/node/blob/master/test/simple/test-fs-watch-recursive.js', function() {
+describe("node.js tests: https://github.com/joyent/node/blob/master/test/simple/test-fs-watch-recursive.js", function() {
   beforeEach(util.setup);
   afterEach(util.cleanup);
 

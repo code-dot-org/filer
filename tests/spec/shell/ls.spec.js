@@ -1,3 +1,4 @@
+var Filer = require('../../..');
 var util = require('../../lib/test-utils.js');
 var expect = require('chai').expect;
 
@@ -14,9 +15,9 @@ describe('FileSystemShell.ls', function() {
     var fs = util.fs();
     var shell = new fs.Shell();
 
-    shell.ls(null, function(error, list) {
+    shell.cat(null, function(error, list) {
       expect(error).to.exist;
-      expect(error.code).to.equal('EINVAL');
+      expect(error.code).to.equal("EINVAL");
       expect(list).not.to.exist;
       done();
     });
@@ -25,8 +26,8 @@ describe('FileSystemShell.ls', function() {
   it('should return the contents of a simple dir', function(done) {
     var fs = util.fs();
     var shell = new fs.Shell();
-    var contents = 'a';
-    var contents2 = 'bb';
+    var contents = "a";
+    var contents2 = "bb";
 
     fs.writeFile('/file', contents, function(err) {
       if(err) throw err;
@@ -39,19 +40,19 @@ describe('FileSystemShell.ls', function() {
           expect(list.length).to.equal(2);
 
           var item0 = list[0];
-          expect(item0.name).to.equal('file');
-          expect(item0.nlinks).to.equal(1);
+          expect(item0.path).to.equal('file');
+          expect(item0.links).to.equal(1);
           expect(item0.size).to.equal(1);
-          expect(item0.mtime).to.be.a('date');
-          expect(item0.isFile()).to.be.true;
+          expect(item0.modified).to.be.a('number');
+          expect(item0.type).to.equal('FILE');
           expect(item0.contents).not.to.exist;
 
           var item1 = list[1];
-          expect(item1.name).to.equal('file2');
-          expect(item1.nlinks).to.equal(1);
+          expect(item1.path).to.equal('file2');
+          expect(item1.links).to.equal(1);
           expect(item1.size).to.equal(2);
-          expect(item1.mtime).to.be.a('date');
-          expect(item1.isFile()).to.be.true;
+          expect(item1.modified).to.be.a('number');
+          expect(item1.type).to.equal('FILE');
           expect(item0.contents).not.to.exist;
 
           done();
@@ -63,7 +64,7 @@ describe('FileSystemShell.ls', function() {
   it('should return the shallow contents of a dir tree', function(done) {
     var fs = util.fs();
     var shell = new fs.Shell();
-    var contents = 'a';
+    var contents = "a";
 
     fs.mkdir('/dir', function(err) {
       if(err) throw err;
@@ -83,20 +84,20 @@ describe('FileSystemShell.ls', function() {
 
               // We shouldn't rely on the order we'll get the listing
               list.forEach(function(item, i, arr) {
-                switch(item.name) {
+                switch(item.path) {
                 case 'dir2':
-                  expect(item.nlinks).to.equal(1);
+                  expect(item.links).to.equal(1);
                   expect(item.size).to.be.a('number');
-                  expect(item.mtime).to.be.a('date');
-                  expect(item.isDirectory()).to.be.true;
+                  expect(item.modified).to.be.a('number');
+                  expect(item.type).to.equal('DIRECTORY');
                   expect(item.contents).not.to.exist;
                   break;
                 case 'file':
                 case 'file2':
-                  expect(item.nlinks).to.equal(1);
+                  expect(item.links).to.equal(1);
                   expect(item.size).to.equal(1);
-                  expect(item.mtime).to.be.a('date');
-                  expect(item.isFile()).to.be.true;
+                  expect(item.modified).to.be.a('number');
+                  expect(item.type).to.equal('FILE');
                   expect(item.contents).not.to.exist;
                   break;
                 default:
@@ -119,7 +120,7 @@ describe('FileSystemShell.ls', function() {
   it('should return the deep contents of a dir tree', function(done) {
     var fs = util.fs();
     var shell = new fs.Shell();
-    var contents = 'a';
+    var contents = "a";
 
     fs.mkdir('/dir', function(err) {
       if(err) throw err;
@@ -142,28 +143,28 @@ describe('FileSystemShell.ls', function() {
 
                 // We shouldn't rely on the order we'll get the listing
                 list.forEach(function(item, i, arr) {
-                  switch(item.name) {
+                  switch(item.path) {
                   case 'dir2':
-                    expect(item.nlinks).to.equal(1);
+                    expect(item.links).to.equal(1);
                     expect(item.size).to.be.a('number');
-                    expect(item.mtime).to.be.a('date');
-                    expect(item.isDirectory()).to.be.true;
+                    expect(item.modified).to.be.a('number');
+                    expect(item.type).to.equal('DIRECTORY');
                     expect(item.contents).to.exist;
                     expect(item.contents.length).to.equal(1);
                     var contents0 = item.contents[0];
-                    expect(contents0.name).to.equal('file');
-                    expect(contents0.nlinks).to.equal(1);
+                    expect(contents0.path).to.equal('file');
+                    expect(contents0.links).to.equal(1);
                     expect(contents0.size).to.equal(1);
-                    expect(contents0.mtime).to.be.a('date');
-                    expect(contents0.isFile()).to.be.true;
+                    expect(contents0.modified).to.be.a('number');
+                    expect(contents0.type).to.equal('FILE');
                     expect(contents0.contents).not.to.exist;
                     break;
                   case 'file':
                   case 'file2':
-                    expect(item.nlinks).to.equal(1);
+                    expect(item.links).to.equal(1);
                     expect(item.size).to.equal(1);
-                    expect(item.mtime).to.be.a('date');
-                    expect(item.isFile()).to.be.true;
+                    expect(item.modified).to.be.a('number');
+                    expect(item.type).to.equal('FILE');
                     expect(item.contents).not.to.exist;
                     break;
                   default:

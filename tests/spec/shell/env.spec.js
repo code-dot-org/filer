@@ -1,3 +1,4 @@
+var Filer = require('../../..');
 var util = require('../../lib/test-utils.js');
 var expect = require('chai').expect;
 
@@ -35,9 +36,9 @@ describe('FileSystemShell.env', function() {
     var fs = util.fs();
     var shell = new fs.Shell();
 
-    shell.ls(null, function(error, list) {
+    shell.cat(null, function(error, list) {
       expect(error).to.exist;
-      expect(error.code).to.equal('EINVAL');
+      expect(error.code).to.equal("EINVAL");
       expect(list).not.to.exist;
       done();
     });

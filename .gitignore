@@ -1,12 +1,5 @@
 node_modules
+bower_components
 .env
 *~
-.vscode
-
-# Parcel build dirs
-.cache
-tests/dist
-
-# nyc code coverage
-.nyc_output
-coverage
+dist/filer-issue225.js
